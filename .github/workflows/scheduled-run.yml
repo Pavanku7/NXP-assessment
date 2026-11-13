@@ -2,9 +2,11 @@ name: scheduled-pipeline
 # Simple orchestration without Airflow: run the incremental pipeline every day.
 # Configure repository secrets: ELECTRICITYMAPS_API_KEY and (optional, for S3 output)
 # ETL_GOLD_URI, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION.
+# The daily schedule is disabled until the secrets above are configured
+# (it failed every night without ELECTRICITYMAPS_API_KEY). Re-enable by uncommenting.
 on:
-  schedule:
-    - cron: "0 2 * * *"
+  # schedule:
+  #   - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
@@ -23,4 +25,10 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m electricity_etl.pipeline
+      - name: Run pipeline (mock data if no API key is configured)
+        run: |
+          if [ -z "$ELECTRICITYMAPS_API_KEY" ]; then
+            python -m electricity_etl.pipeline --mock
+          else
+            python -m electricity_etl.pipeline
+          fi
